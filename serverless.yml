@@ -8,6 +8,7 @@ service: func
 plugins:
   - serverless-appsync-plugin
   - serverless-iam-roles-per-function
+  - serverless-export-env
 
 provider:
   name: aws
@@ -40,6 +41,15 @@ appSync:
           kind: UNIT
           request: mapping-templates/Query.getMyProfile.request.vtl
           response: mapping-templates/Query.getMyProfile.response.vtl
+    editMyProfile:
+      type: Mutation
+      field: editMyProfile
+      functions:
+        - dataSource: usersTableDs
+          kind: UNIT
+          request: mapping-templates/Mutation.editMyProfile.request.vtl
+          response: mapping-templates/Mutation.editMyProfile.response.vtl
+
   dataSources:
     api:
       type: 'NONE'
