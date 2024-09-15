@@ -47,7 +47,13 @@ appSync:
       functions:
         - dataSource: getImageUploadUrlDs
           kind: UNIT
-
+    getTweets:
+      type: Query
+      field: getTweets
+      functions:
+        - dataSource: tweetsTableDs
+          request: mapping-templates/Query.getTweets.request.vtl
+          response: mapping-templates/Query.getTweets.response.vtl
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -63,6 +69,15 @@ appSync:
         - dataSource: tweetDs
           kind: UNIT
 
+    # Nested
+    profile:
+      type: Tweet
+      field: profile
+      functions:
+        - dataSource: usersTableDs
+          request: mapping-templates/Tweet.profile.request.vtl
+          response: mapping-templates/Tweet.profile.response.vtl
+
   dataSources:
     api:
       type: 'NONE'
@@ -70,6 +85,10 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref UsersTable
+    tweetsTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref TweetsTable
     getImageUploadUrlDs:
       type: 'AWS_LAMBDA'
       config:
@@ -113,7 +132,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: 
+        Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt TimelinesTable.Arn
 resources:
@@ -152,8 +171,8 @@ resources:
                 KeyType: HASH
               - AttributeName: id
                 KeyType: RANGE
-            Projection: 
-              ProjectionType: ALL       
+            Projection:
+              ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: ${self:custom.stage}
