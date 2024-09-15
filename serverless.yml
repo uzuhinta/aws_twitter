@@ -54,6 +54,13 @@ appSync:
         - dataSource: tweetsTableDs
           request: mapping-templates/Query.getTweets.request.vtl
           response: mapping-templates/Query.getTweets.response.vtl
+    getMyTimeLine:
+      type: Query
+      field: getMyTimeLine
+      functions:
+        - dataSource: timelinesTableDs
+          request: mapping-templates/Query.getMyTimeLine.request.vtl
+          response: mapping-templates/Query.getMyTimeLine.response.vtl
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -77,7 +84,13 @@ appSync:
         - dataSource: usersTableDs
           request: mapping-templates/Tweet.profile.request.vtl
           response: mapping-templates/Tweet.profile.response.vtl
-
+    tweets:
+      type: TimelinePage
+      field: tweets
+      functions:
+        - dataSource: tweetsTableDs
+          request: mapping-templates/TimelinePage.tweets.request.vtl
+          response: mapping-templates/TimelinePage.tweets.response.vtl
   dataSources:
     api:
       type: 'NONE'
@@ -89,6 +102,10 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref TweetsTable
+    timelinesTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref TimelinesTable
     getImageUploadUrlDs:
       type: 'AWS_LAMBDA'
       config:
@@ -97,7 +114,9 @@ appSync:
       type: 'AWS_LAMBDA'
       config:
         functionName: tweetFunc
-
+  substitutions:
+    TweetsTable: !Ref TweetsTable
+    UsersTable: !Ref UsersTable
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
