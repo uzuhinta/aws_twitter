@@ -1,11 +1,13 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { marshall } from '@aws-sdk/util-dynamodb'
 import { Chance } from 'chance'
 
 const client = new DynamoDBClient();
-const change = new Chance();
+const chance = new Chance();
 const {USERS_TABLE} = process.env
 
-exports.handler = async (event) => {
+export const handler =  async (event) => {
+  console.log("EVENT: \n" + JSON.stringify(event, null, 2));
   if(event.triggerSource === 'PostConfirmation_ConfirmSignUp') {
     const name = event.request.userAttributes['name']
     const suffix = chance.string({ length: 8, casing: 'upper', alpha: true, numeric: true })
@@ -21,11 +23,15 @@ exports.handler = async (event) => {
       likesCounts: 0
     }
 
-    await client.send(new PutItemCommand({
-      "TableName": USERS_TABLE,
-      "Item": user,
-      ConditionExpression: 'attribute_not_exists(id)'
-    }))
+    try {
+      await client.send(new PutItemCommand({
+        "TableName": USERS_TABLE,
+        "Item": marshall(user),
+        ConditionExpression: 'attribute_not_exists(id)'
+      }))
+    } catch (error) {
+      console.log("e", error)
+    }
     return event
   } else {
     return event

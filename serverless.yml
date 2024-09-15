@@ -31,7 +31,22 @@ appSync:
       awsRegion: ap-northeast-1
       defaultAction: ALLOW
       userPoolId: !Ref CognitoUserPool
-
+  resolvers:
+    getMyProfile:
+      type: Query
+      field: getMyProfile
+      functions: 
+        - dataSource: usersTableDs
+          kind: UNIT
+          request: mapping-templates/Query.getMyProfile.request.vtl
+          response: mapping-templates/Query.getMyProfile.response.vtl
+  dataSources:
+    api:
+      type: 'NONE'
+    usersTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref UsersTable
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
