@@ -17,7 +17,7 @@ provider:
   stage: dev
   environment:
     STAGE: ${self:custom.stage}
-    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
 
 custom:
   region: ${opt:region, self:provider.region}
@@ -36,17 +36,23 @@ appSync:
     getMyProfile:
       type: Query
       field: getMyProfile
-      functions: 
+      functions:
         - dataSource: usersTableDs
-          kind: UNIT
           request: mapping-templates/Query.getMyProfile.request.vtl
           response: mapping-templates/Query.getMyProfile.response.vtl
+
+    getImageUploadUrl:
+      type: Query
+      field: getImageUploadUrl
+      functions:
+        - dataSource: getImageUploadUrlDs
+          kind: UNIT
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
       functions:
         - dataSource: usersTableDs
-          kind: UNIT
           request: mapping-templates/Mutation.editMyProfile.request.vtl
           response: mapping-templates/Mutation.editMyProfile.response.vtl
 
@@ -57,6 +63,11 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref UsersTable
+    getImageUploadUrlDs:
+      type: 'AWS_LAMBDA'
+      config:
+        functionName: getImageUploadUrl
+
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
@@ -64,9 +75,19 @@ functions:
       USERS_TABLE: !Ref UsersTable
     iamRoleStatements:
       - Effect: Allow
-        Action: 
+        Action:
           - dynamodb:PutItem
         Resource: !GetAtt UsersTable.Arn
+  getImageUploadUrl:
+    handler: functions/get-upload-url.handler
+    environment:
+      BUCKET_NAME: !Ref AssetBucket
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:PutObjectAcl
+        Resource: !Sub ${AssetBucket.Arn}/*
 
 resources:
   Resources:
@@ -123,6 +144,18 @@ resources:
           - ALLOW_USER_PASSWORD_AUTH
           - ALLOW_REFRESH_TOKEN_AUTH
         PreventUserExistenceErrors: ENABLED
+    AssetBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        CorsConfiguration:
+          CorsRules:
+            - AllowedMethods:
+                - GET
+                - PUT
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
   Outputs:
     CognitoUserPoolId:
       Value: !Ref CognitoUserPool
