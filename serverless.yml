@@ -1,0 +1,59 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: personallearn
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: twitter-clone
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: func
+
+plugins:
+  - serverless-appsync-plugin
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-1
+
+appSync:
+  name: my-api
+  schema: 'schema.graphql'
+  authentication:
+    type: 'AMAZON_COGNITO_USER_POOLS'
+    config:
+      awsRegion: ap-northeast-1
+      defaultAction: ALLOW
+      userPoolId: !Ref CognitoUserPool
+
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: false
+            RequireNumbers: false
+            RequireUppercase: false
+            RequireSymbols: false
+        UsernameAttributes:
+          - email
+        Schema:
+          - AttributeDataType: String
+            Name: name
+            Required: false
+            Mutable: true
+    WebUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        UserPoolId: !Ref CognitoUserPool
+        ClientName: web
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        PreventUserExistenceErrors: ENABLED
+  Outputs:
+    CognitoUserPoolId:
+      Value: !Ref CognitoUserPool

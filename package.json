@@ -1,0 +1,17 @@
+{
+  "name": "aws_twitter_backend",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "sls": "sls"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "serverless": "^4.3.2",
+    "serverless-appsync-plugin": "^2.8.0"
+  }
+}
