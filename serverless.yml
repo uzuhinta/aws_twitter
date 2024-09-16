@@ -61,6 +61,7 @@ appSync:
         - dataSource: timelinesTableDs
           request: mapping-templates/Query.getMyTimeLine.request.vtl
           response: mapping-templates/Query.getMyTimeLine.response.vtl
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -76,6 +77,22 @@ appSync:
         - dataSource: tweetDs
           kind: UNIT
 
+    like:
+      type: Mutation
+      field: like
+      functions:
+        - dataSource: likeMutationDs
+          request: mapping-templates/Mutation.like.request.vtl
+          response: mapping-templates/Mutation.like.response.vtl
+
+    unlike:
+      type: Mutation
+      field: unlike
+      functions:
+        - dataSource: unlikeMutationDs
+          request: mapping-templates/Mutation.unlike.request.vtl
+          response: mapping-templates/Mutation.unlike.response.vtl
+
     # Nested
     profile:
       type: Tweet
@@ -84,6 +101,13 @@ appSync:
         - dataSource: usersTableDs
           request: mapping-templates/Tweet.profile.request.vtl
           response: mapping-templates/Tweet.profile.response.vtl
+    liked:
+      type: Tweet
+      field: liked
+      functions:
+        - dataSource: likesTableDs
+          request: mapping-templates/Tweet.liked.request.vtl
+          response: mapping-templates/Tweet.liked.response.vtl
     tweets:
       type: TimelinePage
       field: tweets
@@ -106,6 +130,40 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref TimelinesTable
+    likesTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref LikesTable
+    likeMutationDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref LikesTable
+        iamRoleStatements:
+          - Effect: Allow
+            Action: 
+              - dynamodb:PutItem
+            Resource: !GetAtt LikesTable.Arn
+          - Effect: Allow
+            Action: 
+              - dynamodb:UpdateItem
+            Resource: 
+              - !GetAtt UsersTable.Arn
+              - !GetAtt TweetsTable.Arn
+    unlikeMutationDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref LikesTable
+        iamRoleStatements:
+          - Effect: Allow
+            Action: 
+              - dynamodb:DeleteItem
+            Resource: !GetAtt LikesTable.Arn
+          - Effect: Allow
+            Action: 
+              - dynamodb:UpdateItem
+            Resource: 
+              - !GetAtt UsersTable.Arn
+              - !GetAtt TweetsTable.Arn
     getImageUploadUrlDs:
       type: 'AWS_LAMBDA'
       config:
@@ -114,9 +172,11 @@ appSync:
       type: 'AWS_LAMBDA'
       config:
         functionName: tweetFunc
+
   substitutions:
     TweetsTable: !Ref TweetsTable
     UsersTable: !Ref UsersTable
+    LikesTable: !Ref LikesTable
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
@@ -216,6 +276,25 @@ resources:
             Value: ${self:custom.stage}
           - Key: Name
             Value: timelines-table
+    LikesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: tweetId
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: tweetId
+            AttributeType: S
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: likes-table
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
