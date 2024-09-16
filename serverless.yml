@@ -62,6 +62,14 @@ appSync:
           request: mapping-templates/Query.getMyTimeLine.request.vtl
           response: mapping-templates/Query.getMyTimeLine.response.vtl
 
+    getLikes:
+      type: Query
+      field: getLikes
+      functions:
+        - dataSource: likesTableDs
+          request: mapping-templates/Query.getLikes.request.vtl
+          response: mapping-templates/Query.getLikes.response.vtl
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
