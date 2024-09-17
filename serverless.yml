@@ -92,6 +92,13 @@ appSync:
         - dataSource: retweetDs
           kind: UNIT
 
+    unretweet:
+      type: Mutation
+      field: unretweet
+      functions:
+        - dataSource: unretweetDs
+          kind: UNIT
+
     like:
       type: Mutation
       field: like
@@ -116,6 +123,13 @@ appSync:
         - dataSource: usersTableDs
           request: mapping-templates/Tweet.profile.request.vtl
           response: mapping-templates/Tweet.profile.response.vtl
+    profile-retweet:
+      type: Retweet
+      field: profile
+      functions:
+        - dataSource: usersTableDs
+          request: mapping-templates/Tweet.profile.request.vtl
+          response: mapping-templates/Tweet.profile.response.vtl
     liked:
       type: Tweet
       field: liked
@@ -123,6 +137,13 @@ appSync:
         - dataSource: likesTableDs
           request: mapping-templates/Tweet.liked.request.vtl
           response: mapping-templates/Tweet.liked.response.vtl
+    retweetOf:
+      type: Retweet
+      field: retweetOf
+      functions:
+        - dataSource: tweetsTableDs
+          request: mapping-templates/Retweet.retweetOf.request.vtl
+          response: mapping-templates/Retweet.retweetOf.response.vtl
     tweets:
       type: TimelinePage
       field: tweets
@@ -199,6 +220,11 @@ appSync:
       config:
         functionName: retweetFunc
 
+    unretweetDs:
+      type: 'AWS_LAMBDA'
+      config:
+        functionName: unretweetFunc
+
   substitutions:
     TweetsTable: !Ref TweetsTable
     UsersTable: !Ref UsersTable
@@ -261,6 +287,36 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
+        Resource:
+          - !GetAtt TweetsTable.Arn
+          - !GetAtt TimelinesTable.Arn
+          - !GetAtt RetweetsTable.Arn
+
+  unretweetFunc:
+    handler: functions/unretweet.handler
+    environment:
+      USERS_TABLE_NAME: !Ref UsersTable
+      TWEETS_TABLE_NAME: !Ref TweetsTable
+      RETWEETS_TABLE_NAME: !Ref RetweetsTable
+      TIMELINES_TABLE_NAME: !Ref TimelinesTable
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: !GetAtt TweetsTable.Arn
+      - Effect: Allow
+        Action: 
+          - dynamodb:Query
+        Resource: !Sub "${TweetsTable.Arn}/index/retweetsByCreator"
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: 
+          - !GetAtt TweetsTable.Arn
+          - !GetAtt UsersTable.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
         Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt TimelinesTable.Arn
