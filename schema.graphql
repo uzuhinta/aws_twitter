@@ -139,7 +139,7 @@ type Reply implements ITweet {
   retweeted: Boolean!
 }
 
-type ReTweet implements ITweet {
+type Retweet implements ITweet {
   id: ID!
   profile: IProfile!
   createdAt: AWSDateTime!

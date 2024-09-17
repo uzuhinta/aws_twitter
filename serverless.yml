@@ -85,6 +85,13 @@ appSync:
         - dataSource: tweetDs
           kind: UNIT
 
+    retweet:
+      type: Mutation
+      field: retweet
+      functions:
+        - dataSource: retweetDs
+          kind: UNIT
+
     like:
       type: Mutation
       field: like
@@ -123,6 +130,13 @@ appSync:
         - dataSource: tweetsTableDs
           request: mapping-templates/TimelinePage.tweets.request.vtl
           response: mapping-templates/TimelinePage.tweets.response.vtl
+    tweetsMP:
+      type: MyProfile
+      field: tweets
+      functions:
+        - dataSource: tweetsTableDs
+          request: mapping-templates/MyProfile.tweets.request.vtl
+          response: mapping-templates/MyProfile.tweets.response.vtl
   dataSources:
     api:
       type: 'NONE'
@@ -180,6 +194,10 @@ appSync:
       type: 'AWS_LAMBDA'
       config:
         functionName: tweetFunc
+    retweetDs:
+      type: 'AWS_LAMBDA'
+      config:
+        functionName: retweetFunc
 
   substitutions:
     TweetsTable: !Ref TweetsTable
@@ -222,6 +240,31 @@ functions:
         Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt TimelinesTable.Arn
+  retweetFunc:
+    handler: functions/retweet.handler
+    environment:
+      USERS_TABLE_NAME: !Ref UsersTable
+      TWEETS_TABLE_NAME: !Ref TweetsTable
+      RETWEETS_TABLE_NAME: !Ref RetweetsTable
+      TIMELINES_TABLE_NAME: !Ref TimelinesTable
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: !GetAtt TweetsTable.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: 
+          - !GetAtt TweetsTable.Arn
+          - !GetAtt UsersTable.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource:
+          - !GetAtt TweetsTable.Arn
+          - !GetAtt TimelinesTable.Arn
+          - !GetAtt RetweetsTable.Arn
 resources:
   Resources:
     UsersTable:
@@ -303,6 +346,25 @@ resources:
             Value: ${self:custom.stage}
           - Key: Name
             Value: likes-table
+    RetweetsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: tweetId
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: tweetId
+            AttributeType: S
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: retweets-table
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
