@@ -194,6 +194,20 @@ appSync:
         - dataSource: tweetsTableDs
           request: mapping-templates/MyProfile.tweets.request.vtl
           response: mapping-templates/MyProfile.tweets.response.vtl
+    following:
+      type: OtherProfile
+      field: following
+      functions:
+        - dataSource: relationshipsTableDs
+          request: mapping-templates/OtherProfile.following.request.vtl
+          response: mapping-templates/OtherProfile.following.response.vtl
+    followedBy:
+      type: OtherProfile
+      field: followedBy
+      functions:
+        - dataSource: relationshipsTableDs
+          request: mapping-templates/OtherProfile.followedBy.request.vtl
+          response: mapping-templates/OtherProfile.followedBy.response.vtl
   dataSources:
     api:
       type: 'NONE'
