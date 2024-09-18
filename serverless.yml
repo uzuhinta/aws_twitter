@@ -41,6 +41,14 @@ appSync:
           request: mapping-templates/Query.getMyProfile.request.vtl
           response: mapping-templates/Query.getMyProfile.response.vtl
 
+    getProfile:
+      type: Query
+      field: getProfile
+      functions:
+        - dataSource: usersTableDs
+          request: mapping-templates/Query.getProfile.request.vtl
+          response: mapping-templates/Query.getProfile.response.vtl
+
     getImageUploadUrl:
       type: Query
       field: getImageUploadUrl
@@ -431,6 +439,15 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+          - AttributeName: screenName
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: byScreenName
+            KeySchema:
+              - AttributeName: screenName
+                KeyType: HASH
+            Projection:
+                ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: ${self:custom.stage}
