@@ -250,15 +250,15 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref RelationshipsTable
-      iamRoleStatements:
-        - Effect: Allow
-          Action:
-            - dynamodb:PutItem
-          Resource: !GetAtt RelationshipsTable.Arn
-        - Effect: Allow
-          Action:
-            - dynamodb:UpdateItem
-          Resource: !GetAtt UsersTable.Arn
+        iamRoleStatements:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource: !GetAtt RelationshipsTable.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource: !GetAtt UsersTable.Arn
     unlikeMutationDs:
       type: AMAZON_DYNAMODB
       config:
