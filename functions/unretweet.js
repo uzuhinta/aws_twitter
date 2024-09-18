@@ -5,8 +5,8 @@ import {
   QueryCommand,
   TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb';
-import { marshall } from '@aws-sdk/util-dynamodb';
-import { ulid } from 'ulid';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import _ from 'lodash';
 
 const client = new DynamoDBClient();
 const {
@@ -21,6 +21,8 @@ export const handler = async (event) => {
   const { tweetId } = event.arguments;
   const { username } = event.identity;
 
+  console.log({ tweetId, username });
+
   const tweetRes = await client.send(
     new GetItemCommand({
       TableName: TWEETS_TABLE_NAME,
@@ -30,34 +32,47 @@ export const handler = async (event) => {
     })
   );
 
-  const storedTweet = tweetRes.Item;
+  console.log('tweetRes', tweetRes);
+
+  let storedTweet = tweetRes.Item;
 
   if (!storedTweet) throw new Error('Tweet Not found');
 
-  const queryRes = await client.send(new QueryCommand({
-    TableName: TWEETS_TABLE_NAME,
-    IndexName: 'retweetsByCreator',
-    KeyConditionExpression: 'creator = :creator AND retweetOf = :tweetId',
-    ExpressionAttributeValues: {
-      ':creator': username,
-      ':tweetId': tweetId
-    },
-    Limit: 1
-  }))
+  storedTweet = unmarshall(storedTweet);
 
-  const retweet = queryRes.Items.length === 1 ? queryRes.Items[0] : null;
+  console.log('storedTweet', storedTweet);
 
-  if(!retweet) throw new Error("Retweet is not found!")
-  
+  const queryRes = await client.send(
+    new QueryCommand({
+      TableName: TWEETS_TABLE_NAME,
+      IndexName: 'retweetsByCreator',
+      KeyConditionExpression: 'creator = :creator AND retweetOf = :tweetId',
+      ExpressionAttributeValues: marshall({
+        ':creator': username,
+        ':tweetId': tweetId,
+      }),
+      Limit: 1,
+    })
+  );
 
-  console.log('tweet: \n' + JSON.stringify(tweet, null, 2));
+  console.log('queryRes', queryRes);
+  console.log('queryRes.Count === 0', queryRes.Count === 0);
+
+  if (queryRes.Count === 0) throw new Error('Retweet is not found!');
+
+  let retweet = _.get(queryRes, 'Items.0');
+
+  retweet = unmarshall(retweet);
+  console.log('retweet', retweet);
+
+  console.log('tweet: \n' + JSON.stringify(retweet, null, 2));
 
   const transactItems = [
     {
       Delete: {
         TableName: TWEETS_TABLE_NAME,
-        Key: marshall({id: retweet.id}),
-        ConditionExpression: 'attribute_exists(id)'
+        Key: marshall({ id: retweet.id }),
+        ConditionExpression: 'attribute_exists(id)',
       },
     },
     {
@@ -65,9 +80,9 @@ export const handler = async (event) => {
         TableName: RETWEETS_TABLE_NAME,
         Key: marshall({
           userId: username,
-          tweetId
+          tweetId,
         }),
-        ConditionExpression: 'attribute_exists(tweetId)'
+        ConditionExpression: 'attribute_exists(tweetId)',
       },
     },
     {
@@ -98,7 +113,9 @@ export const handler = async (event) => {
     },
   ];
 
-  if (tweet.creator !== username) {
+  console.log('transactItems', transactItems);
+
+  if (storedTweet.creator !== username) {
     transactItems.push({
       Delete: {
         TableName: TIMELINES_TABLE_NAME,
@@ -109,6 +126,8 @@ export const handler = async (event) => {
       },
     });
   }
+
+  console.log('AFTER, transactItems', transactItems);
 
   await client.send(
     new TransactWriteItemsCommand({

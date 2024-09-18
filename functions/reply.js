@@ -1,17 +1,29 @@
 import {
   DynamoDBClient,
   GetItemCommand,
-  PutItemCommand,
   TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb';
 import { marshall } from '@aws-sdk/util-dynamodb';
-import { ulid } from 'ulid';
-import { getTweetById } from '../lib/tweets';
 import _ from 'lodash';
+import { ulid } from 'ulid';
 
 const client = new DynamoDBClient();
 const { USERS_TABLE_NAME, TWEETS_TABLE_NAME, TIMELINES_TABLE_NAME } =
   process.env;
+
+const getTweetById = async (tweetId) => {
+  const res = await client.send(
+    new GetItemCommand({
+      TableName: TWEETS_TABLE_NAME,
+      Key: {
+        id: { S: tweetId },
+      },
+    })
+  );
+
+  return res.Item;
+};
+
 export const handler = async (event) => {
   console.log('EVENT: \n' + JSON.stringify(event, null, 2));
 
@@ -20,13 +32,13 @@ export const handler = async (event) => {
   const id = ulid();
   const timestamp = new Date().toJSON();
 
-  const storedTweet = await getTweetById(tweetId);
+  const tweet = await getTweetById(tweetId);
 
-  if (!storedTweet) throw new Error('Not found');
+  if (!tweet) throw new Error('Not found');
 
   const inReplyToUserIds = await getUserIdsToReplyTo(tweet);
 
-  const tweet = {
+  const newTweet = {
     __typename: 'Reply',
     id,
     creator: username,
@@ -45,7 +57,7 @@ export const handler = async (event) => {
     {
       Put: {
         TableName: TWEETS_TABLE_NAME,
-        Item: marshall(tweet),
+        Item: marshall(newTweet),
       },
     },
     {
@@ -94,14 +106,14 @@ export const handler = async (event) => {
     })
   );
 
-  return true;
+  return newTweet;
 };
 
 async function getUserIdsToReplyTo(tweet) {
   let userIds = [tweet.creator];
-  if (tweet.__typename === TweetTypes.REPLY) {
+  if (tweet.__typename === 'Reply') {
     userIds = userIds.concat(tweet.inReplyToUserIds);
-  } else if (tweet.__typename === TweetTypes.RETWEET) {
+  } else if (tweet.__typename === 'Retweet') {
     const retweetOf = await getTweetById(tweet.retweetOf);
     userIds = userIds.concat(await getUserIdsToReplyTo(retweetOf));
   }

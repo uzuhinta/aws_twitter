@@ -58,7 +58,7 @@ export const handler = async (event) => {
         Item: marshall({
           userId: username,
           tweetId,
-          createdAt: timestamp
+          createdAt: timestamp,
         }),
         ConditionExpression: 'attribute_not_exists(tweetId)',
       },
