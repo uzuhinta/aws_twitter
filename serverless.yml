@@ -106,6 +106,14 @@ appSync:
         - dataSource: replyDs
           kind: UNIT
 
+    follow:
+      type: Mutation
+      field: follow
+      functions:
+        - dataSource: followMutation
+          request: mapping-templates/Mutation.follow.request.vtl
+          response: mapping-templates/Mutation.follow.response.vtl
+
     like:
       type: Mutation
       field: like
@@ -205,34 +213,51 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref LikesTable
+    relationshipsTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref RelationshipsTable
     likeMutationDs:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref LikesTable
         iamRoleStatements:
           - Effect: Allow
-            Action: 
+            Action:
               - dynamodb:PutItem
             Resource: !GetAtt LikesTable.Arn
           - Effect: Allow
-            Action: 
+            Action:
               - dynamodb:UpdateItem
-            Resource: 
+            Resource:
               - !GetAtt UsersTable.Arn
               - !GetAtt TweetsTable.Arn
+    followMutation:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref RelationshipsTable
+      iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource: !GetAtt RelationshipsTable.Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:UpdateItem
+          Resource: !GetAtt UsersTable.Arn
     unlikeMutationDs:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref LikesTable
         iamRoleStatements:
           - Effect: Allow
-            Action: 
+            Action:
               - dynamodb:DeleteItem
             Resource: !GetAtt LikesTable.Arn
           - Effect: Allow
-            Action: 
+            Action:
               - dynamodb:UpdateItem
-            Resource: 
+            Resource:
               - !GetAtt UsersTable.Arn
               - !GetAtt TweetsTable.Arn
     getImageUploadUrlDs:
@@ -262,6 +287,7 @@ appSync:
     TweetsTable: !Ref TweetsTable
     UsersTable: !Ref UsersTable
     LikesTable: !Ref LikesTable
+    RelationshipsTable: !Ref RelationshipsTable
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
@@ -314,7 +340,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
-        Resource: 
+        Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt UsersTable.Arn
       - Effect: Allow
@@ -338,13 +364,13 @@ functions:
           - dynamodb:GetItem
         Resource: !GetAtt TweetsTable.Arn
       - Effect: Allow
-        Action: 
+        Action:
           - dynamodb:Query
-        Resource: !Sub "${TweetsTable.Arn}/index/retweetsByCreator"
+        Resource: !Sub '${TweetsTable.Arn}/index/retweetsByCreator'
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
-        Resource: 
+        Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt UsersTable.Arn
       - Effect: Allow
@@ -369,7 +395,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
-        Resource: 
+        Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt UsersTable.Arn
       - Effect: Allow
@@ -378,7 +404,7 @@ functions:
         Resource:
           - !GetAtt TweetsTable.Arn
           - !GetAtt TimelinesTable.Arn
-          
+
 resources:
   Resources:
     UsersTable:
@@ -499,6 +525,36 @@ resources:
             Value: ${self:custom.stage}
           - Key: Name
             Value: retweets-table
+    RelationshipsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+          - AttributeName: otherUserId
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: byOtherUser
+            KeySchema:
+              - AttributeName: otherUserId
+                KeyType: HASH
+              - AttributeName: sk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: relationships-table
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
