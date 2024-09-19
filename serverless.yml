@@ -78,6 +78,16 @@ appSync:
           request: mapping-templates/Query.getLikes.request.vtl
           response: mapping-templates/Query.getLikes.response.vtl
 
+    getFollowers:
+      type: Query
+      field: getFollowers
+      kind: PIPELINE
+      functions:
+        - getFollowers
+        - hydrateFollowers
+      request: mapping-templates/simplePipeline.request.vtl
+      response: mapping-templates/simplePipeline.response.vtl
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -331,6 +341,15 @@ appSync:
     UsersTable: !Ref UsersTable
     LikesTable: !Ref LikesTable
     RelationshipsTable: !Ref RelationshipsTable
+  pipelineFunctions:
+    getFollowers:
+      dataSource: relationshipsTableDs
+      request: mapping-templates/getFollowers.request.vtl
+      response: mapping-templates/getFollowers.response.vtl
+    hydrateFollowers:
+      dataSource: usersTableDs
+      request: mapping-templates/hydrateFollowers.request.vtl
+      response: mapping-templates/hydrateFollowers.response.vtl
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
