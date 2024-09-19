@@ -70,6 +70,16 @@ appSync:
           request: mapping-templates/Query.getLikes.request.vtl
           response: mapping-templates/Query.getLikes.response.vtl
 
+    getFollowers:
+      type: Query
+      field: getFollowers
+      kind: PIPELINE
+      functions:
+        - getFollowers
+        - hydrateFollowers
+      request: simplePipeline.request.vtl
+      response: simplePipeline.response.vtl
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -262,6 +272,15 @@ appSync:
     TweetsTable: !Ref TweetsTable
     UsersTable: !Ref UsersTable
     LikesTable: !Ref LikesTable
+  pipelineFunctions:
+    getFollowers:
+      dataSource: relationshipsTableDs
+      request: mapping-templates/getFollowers.request.vtl
+      response: mapping-templates/getFollowers.response.vtl
+    hydrateFollowers:
+      dataSource: usersTableDs
+      request: mapping-templates/hydrateFollowers.request.vtl
+      response: mapping-templates/hydrateFollowers.response.vtl
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
