@@ -81,7 +81,7 @@ export const handler = async (event) => {
           UpdateExpression: 'ADD retweets :minusOne',
           ConditionExpression: 'attribute_exists(id)',
           ExpressionAttributeValues: marshall({
-            ':minusOne': -1,
+            ':minusOne': $util.dynamodb.toDynamoDBJson(-1),
           }),
         },
       },
@@ -94,7 +94,7 @@ export const handler = async (event) => {
           UpdateExpression: 'ADD tweetsCount :minusOne',
           ConditionExpression: 'attribute_exists(id)',
           ExpressionAttributeValues: marshall({
-            ':minusOne': -1,
+            ':minusOne': $util.dynamodb.toDynamoDBJson(-1),
           }),
         },
       },
