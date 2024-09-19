@@ -88,6 +88,16 @@ appSync:
       request: mapping-templates/simplePipeline.request.vtl
       response: mapping-templates/simplePipeline.response.vtl
 
+    getFollowing:
+      type: Query
+      field: getFollowing
+      kind: PIPELINE
+      functions:
+        - getFollowing
+        - hydrateFollowing
+      request: mapping-templates/simplePipeline.request.vtl
+      response: mapping-templates/simplePipeline.response.vtl
+
     editMyProfile:
       type: Mutation
       field: editMyProfile
@@ -350,6 +360,14 @@ appSync:
       dataSource: usersTableDs
       request: mapping-templates/hydrateFollowers.request.vtl
       response: mapping-templates/hydrateFollowers.response.vtl
+    getFollowing:
+      dataSource: relationshipsTableDs
+      request: mapping-templates/getFollowing.request.vtl
+      response: mapping-templates/getFollowing.response.vtl
+    hydrateFollowing:
+      dataSource: usersTableDs
+      request: mapping-templates/hydrateFollowing.request.vtl
+      response: mapping-templates/hydrateFollowing.response.vtl
 functions:
   confirmUserSignup:
     handler: functions/confirm-user-signup.handler
