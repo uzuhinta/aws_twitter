@@ -72,7 +72,7 @@ export const handler = async (event) => {
         UpdateExpression: 'ADD retweets :one',
         ConditionExpression: 'attribute_exists(id)',
         ExpressionAttributeValues: marshall({
-          ':one': 1,
+          ':one': $util.dynamodb.toDynamoDBJson(1),
         }),
       },
     },
@@ -85,7 +85,7 @@ export const handler = async (event) => {
         UpdateExpression: 'ADD tweetsCount :one',
         ConditionExpression: 'attribute_exists(id)',
         ExpressionAttributeValues: marshall({
-          ':one': 1,
+          ':one': $util.dynamodb.toDynamoDBJson(1),
         }),
       },
     },

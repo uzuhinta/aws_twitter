@@ -138,6 +138,14 @@ appSync:
           request: mapping-templates/Mutation.unlike.request.vtl
           response: mapping-templates/Mutation.unlike.response.vtl
 
+    unfollow:
+      type: Mutation
+      field: unfollow
+      functions:
+        - dataSource: unfollowMutationDs
+          request: mapping-templates/Mutation.unfollow.request.vtl
+          response: mapping-templates/Mutation.unfollow.response.vtl
+
     # Nested
     profile:
       type: Tweet
@@ -282,6 +290,19 @@ appSync:
             Resource:
               - !GetAtt UsersTable.Arn
               - !GetAtt TweetsTable.Arn
+    unfollowMutationDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref RelationshipsTable
+        iamRoleStatements:
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+            Resource: !GetAtt RelationshipsTable.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource: !GetAtt UsersTable.Arn
     getImageUploadUrlDs:
       type: 'AWS_LAMBDA'
       config:
@@ -453,7 +474,7 @@ functions:
     environment:
       TWEETS_TABLE_NAME: !Ref TweetsTable
       TIMELINES_TABLE_NAME: !Ref TimelinesTable
-      MAX_TWEETS: "100"
+      MAX_TWEETS: '100'
     events:
       - stream:
           type: dynamodb
@@ -461,13 +482,13 @@ functions:
     iamRoleStatementsName: ${self:service}-${self:custom.stage}-distributeTweetsToFollower
     iamRoleStatements:
       - Effect: Allow
-        Action: 
+        Action:
           - dynamodb:Query
         Resource:
-          - !Sub "${TweetsTable.Arn}/index/byCreator"
-          - !Sub "${TimelinesTable.Arn}/index/byDistributedFrom"
+          - !Sub '${TweetsTable.Arn}/index/byCreator'
+          - !Sub '${TimelinesTable.Arn}/index/byDistributedFrom'
       - Effect: Allow
-        Action: 
+        Action:
           - dynamodb:BatchWriteItem
           - dynamodb:PutItem
           - dynamodb:DeleteItem
