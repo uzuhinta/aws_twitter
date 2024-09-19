@@ -379,6 +379,31 @@ functions:
           - dynamodb:Query
         Resource: !Sub "${RelationshipsTable.Arn}/index/byOtherUser"
 
+  distributeTweetsToFollower:
+    handler: functions/distribute-tweets-to-follower.handler
+    environment:
+      TWEETS_TABLE_NAME: !Ref TweetsTable
+      TIMELINES_TABLE_NAME: !Ref TimelinesTable
+      MAX_TWEETS: "100"
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt RelationshipsTable.StreamArn
+    iamRoleStatementsName: ${self:service}-${self:custom.stage}-distributeTweetsToFollower
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:Query
+        Resource:
+          - !Sub "${TweetsTable.Arn}/index/byCreator"
+          - !Sub "${TimelinesTable.Arn}/index/byDistributedFrom"
+      - Effect: Allow
+        Action: 
+          - dynamodb:BatchWriteItem
+          - dynamodb:PutItem
+          - dynamodb:DeleteItem
+        Resource: !GetAtt TimelinesTable.Arn
+
 resources:
   Resources:
     UsersTable:
@@ -458,6 +483,17 @@ resources:
             AttributeType: S
           - AttributeName: tweetId
             AttributeType: S
+          - AttributeName: distributedFrom
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: byDistributedFrom
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: distributedFrom
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: ${self:custom.stage}
@@ -532,6 +568,8 @@ resources:
             Value: ${self:custom.stage}
           - Key: Name
             Value: relationships-table
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
