@@ -531,6 +531,25 @@ functions:
           - dynamodb:DeleteItem
         Resource: !GetAtt TimelinesTable.Arn
 
+  syncUserToAlgolia:
+    handler: functions/sync-user-to-algolia.handler
+    environment:
+      ALGOLIA_APP_ID: 1MVZUHJGN4
+      ALGOLIA_WRITE_KEY: 391bf889e027e951bf99d1550cbe2205
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt UsersTable.StreamArn
+  syncTweetToAlgolia:
+    handler: functions/sync-tweet-to-algolia.handler
+    environment:
+      ALGOLIA_APP_ID: 1MVZUHJGN4
+      ALGOLIA_WRITE_KEY: 391bf889e027e951bf99d1550cbe2205
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt TweetsTable.StreamArn
+
 resources:
   Resources:
     UsersTable:
@@ -552,6 +571,8 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
         Tags:
           - Key: Environment
             Value: ${self:custom.stage}
