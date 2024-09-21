@@ -55,6 +55,14 @@ appSync:
       functions:
         - dataSource: getImageUploadUrlDs
           kind: UNIT
+
+    search:
+      type: Query
+      field: search
+      functions:
+        - dataSource: searchDs
+          kind: UNIT
+          
     getTweets:
       type: Query
       field: getTweets
@@ -346,6 +354,11 @@ appSync:
       config:
         functionName: replyFunc
 
+    searchDs:
+      type: 'AWS_LAMBDA'
+      config:
+        functionName: search
+
   substitutions:
     TweetsTable: !Ref TweetsTable
     UsersTable: !Ref UsersTable
@@ -549,6 +562,11 @@ functions:
       - stream:
           type: dynamodb
           arn: !GetAtt TweetsTable.StreamArn
+  search:
+    handler: functions/search.handler
+    environment:
+      ALGOLIA_APP_ID: 1MVZUHJGN4
+      ALGOLIA_WRITE_KEY: 391bf889e027e951bf99d1550cbe2205
 
 resources:
   Resources:
