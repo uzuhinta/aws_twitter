@@ -16,6 +16,7 @@ export const handler = async (event) => {
   const { username } = event.identity;
   const id = ulid();
   const timestamp = new Date().toJSON();
+  const hashTags = extractHashTags(text);
 
   const tweet = {
     __typename: 'Tweet',
@@ -26,6 +27,7 @@ export const handler = async (event) => {
     replies: 0,
     likes: 0,
     retweets: 0,
+    hashTags,
   };
 
   console.log('tweet: \n' + JSON.stringify(tweet, null, 2));
@@ -68,3 +70,20 @@ export const handler = async (event) => {
 
   return tweet;
 };
+
+function extractHashTags(text) {
+  const hashTags = new Set();
+  const regex = /(\#[a-zA-Z0-9_]+\b)/gm;
+  let m;
+
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+
+    m.forEach((match) => hashTags.add(match));
+  }
+
+  return Array.from(hashTags);
+}
