@@ -79,6 +79,15 @@ appSync:
         - dataSource: tweetsTableDs
           request: mapping-templates/Query.getTweets.request.vtl
           response: mapping-templates/Query.getTweets.response.vtl
+
+    listConversations:
+      type: Query
+      field: listConversations
+      functions:
+        - dataSource: conversationsTableDs
+          request: mapping-templates/Query.listConversations.request.vtl
+          response: mapping-templates/Query.listConversations.response.vtl
+
     getMyTimeLine:
       type: Query
       field: getMyTimeLine
