@@ -76,9 +76,9 @@ export const handler = async (event) => {
         case 'Retweet':
           await notifyRetweet(tweet);
           break;
-        // case TweetTypes.REPLY:
-        //   await notifyReply(tweet.inReplyToUserIds, tweet)
-        //   break
+        case TweetTypes.REPLY:
+          await notifyReply(tweet.inReplyToUserIds, tweet)
+          break
       }
 
       if (tweet.text) {
@@ -162,7 +162,7 @@ async function notifyMentioned(screenNames, tweet) {
       return;
     }
 
-    await mutate(
+    await makeSignedAppSyncRequest(
       `mutation notifyMentioned(
       $id: ID!
       $userId: ID!
@@ -229,4 +229,43 @@ async function getUserByScreenName(screenName) {
   );
 
   return _.get(resp, 'Items.0');
+}
+
+async function notifyReply(userIds, tweet) {
+  const promises = userIds.map(userId => 
+    makeSignedAppSyncRequest(`mutation notifyReplied(
+      $id: ID!
+      $userId: ID!
+      $tweetId: ID!
+      $replyTweetId: ID!
+      $repliedBy: ID!
+    ) {
+      notifyReplied(
+        id: $id
+        userId: $userId
+        tweetId: $tweetId
+        replyTweetId: $replyTweetId
+        repliedBy: $repliedBy
+      ) {
+        __typename
+        ... on Replied {
+          id
+          type
+          userId
+          tweetId
+          repliedBy
+          replyTweetId
+          createdAt
+        }
+      }
+    }`, {
+      id: ulid(),
+      userId,
+      tweetId: tweet.inReplyToTweetId,
+      replyTweetId: tweet.id,
+      repliedBy: tweet.creator
+    })
+  )
+
+  await Promise.all(promises)
 }
