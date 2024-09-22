@@ -333,6 +333,14 @@ appSync:
           request: mapping-templates/Conversation.otherUser.request.vtl
           response: mapping-templates/Conversation.otherUser.response.vtl
 
+    from:
+      type: Message
+      field: from
+      functions:
+        - dataSource: usersTableDs
+          request: mapping-templates/Message.from.request.vtl
+          response: mapping-templates/Message.from.response.vtl
+
   dataSources:
     noneDs:
       type: 'NONE'
