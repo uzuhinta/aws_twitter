@@ -199,6 +199,14 @@ appSync:
           request: mapping-templates/Mutation.notifyLiked.request.vtl
           response: mapping-templates/Mutation.notifyLiked.response.vtl
 
+    notifyMentioned:
+      type: Mutation
+      field: notifyMentioned
+      functions:
+        - dataSource: notificationsTableDs
+          request: mapping-templates/Mutation.notifyMentioned.request.vtl
+          response: mapping-templates/Mutation.notifyMentioned.response.vtl
+
     # Nested
     profile:
       type: Tweet
