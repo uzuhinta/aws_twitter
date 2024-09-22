@@ -191,6 +191,14 @@ appSync:
           request: mapping-templates/Mutation.notifyRetweeted.request.vtl
           response: mapping-templates/Mutation.notifyRetweeted.response.vtl
 
+    notifyLiked:
+      type: Mutation
+      field: notifyLiked
+      functions:
+        - dataSource: notificationsTableDs
+          request: mapping-templates/Mutation.notifyLiked.request.vtl
+          response: mapping-templates/Mutation.notifyLiked.response.vtl
+
     # Nested
     profile:
       type: Tweet
@@ -629,6 +637,27 @@ functions:
         Action:
           - dynamodb:Query
         Resource: !Sub ${UsersTable.Arn}/index/byScreenName
+
+  notifyLiked:
+    handler: functions/notify-liked.handler
+    environment:
+      GRAPHQL_API_URL: !GetAtt GraphQlApi.GraphQLUrl
+      TWEETS_TABLE_NAME: !Ref TweetsTable
+      USERS_TABLE_NAME: !Ref UsersTable
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt LikesTable.StreamArn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - appsync:GraphQL
+        Resource: !Sub ${GraphQlApi.Arn}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: !GetAtt TweetsTable.Arn
+
 resources:
   Resources:
     UsersTable:
@@ -749,6 +778,8 @@ resources:
             AttributeType: S
           - AttributeName: tweetId
             AttributeType: S
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
         Tags:
           - Key: Environment
             Value: ${self:custom.stage}
