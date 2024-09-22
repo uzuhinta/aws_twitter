@@ -89,6 +89,13 @@ type Mutation {
     repliedBy: ID!
   ): Notification! @aws_iam
 
+  notifyDMed(
+    id: ID!
+    userId: ID!
+    otherUserId: ID!
+    message: String!
+  ): Notification! @aws_iam
+
   sendDirectMessage(otherUserId: ID!, message: String!): Conversation!
 }
 
@@ -100,6 +107,7 @@ type Subscription {
         "notifyLiked"
         "notifyMentioned"
         "notifyReplied"
+        "notifyDMed"
       ]
     )
 }
@@ -292,7 +300,16 @@ type Replied implements iNotification @aws_iam @aws_cognito_user_pools {
   createdAt: AWSDateTime!
 }
 
-union Notification = Retweeted | Liked | Mentioned | Replied
+type DMed implements iNotification @aws_iam @aws_cognito_user_pools {
+  id: ID!
+  type: NotificationType!
+  userId: ID!
+  createdAt: AWSDateTime!
+  otherUserId: ID!
+  message: String!
+}
+
+union Notification = Retweeted | Liked | Mentioned | Replied | DMed
 
 interface iNotification {
   id: ID!
@@ -306,6 +323,7 @@ enum NotificationType {
   Liked
   Mentioned
   Replied
+  DMed
 }
 
 type Conversation {

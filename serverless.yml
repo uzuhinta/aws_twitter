@@ -232,6 +232,14 @@ appSync:
           request: mapping-templates/Mutation.notifyReplied.request.vtl
           response: mapping-templates/Mutation.notifyReplied.response.vtl
 
+    notifyDmed:
+      type: Mutation
+      field: notifyDmed
+      functions:
+        - dataSource: notificationsTableDs
+          request: mapping-templates/Mutation.notifyDmed.request.vtl
+          response: mapping-templates/Mutation.notifyDmed.response.vtl
+
     sendDirectMessage:
       type: Mutation
       field: sendDirectMessage
@@ -726,6 +734,18 @@ functions:
         Action:
           - dynamodb:GetItem
         Resource: !GetAtt TweetsTable.Arn
+
+  notifyDmed:
+    handler: functions/notify-dmed.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt DirectMessagesTable.StreamArn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - appsync:GraphQL
+        Resource: !Sub ${GraphQlApi.Arn}/*
 
   sendDirectMessage:
     handler: functions/send-direct-message.handler
