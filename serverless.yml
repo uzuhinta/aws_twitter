@@ -88,6 +88,14 @@ appSync:
           request: mapping-templates/Query.listConversations.request.vtl
           response: mapping-templates/Query.listConversations.response.vtl
 
+    getDirectMessages:
+      type: Query
+      field: getDirectMessages
+      functions:
+        - dataSource: directMessagesTableDs
+          request: mapping-templates/Query.getDirectMessages.request.vtl
+          response: mapping-templates/Query.getDirectMessages.response.vtl
+
     getMyTimeLine:
       type: Query
       field: getMyTimeLine
