@@ -32,6 +32,8 @@ appSync:
       awsRegion: ap-northeast-1
       defaultAction: ALLOW
       userPoolId: !Ref CognitoUserPool
+  additionalAuthentications:
+    - type: 'AWS_IAM'
   resolvers:
     getMyProfile:
       type: Query
@@ -181,6 +183,14 @@ appSync:
           request: mapping-templates/Mutation.unfollow.request.vtl
           response: mapping-templates/Mutation.unfollow.response.vtl
 
+    notifyRetweeted:
+      type: Mutation
+      field: notifyRetweeted
+      functions:
+        - dataSource: notificationsTableDs
+          request: mapping-templates/Mutation.notifyRetweeted.request.vtl
+          response: mapping-templates/Mutation.notifyRetweeted.response.vtl
+
     # Nested
     profile:
       type: Tweet
@@ -259,8 +269,16 @@ appSync:
         - dataSource: relationshipsTableDs
           request: mapping-templates/OtherProfile.followedBy.request.vtl
           response: mapping-templates/OtherProfile.followedBy.response.vtl
+
+    onNotified:
+      type: Subscription
+      field: onNotified
+      functions:
+        - dataSource: noneDs
+          request: mapping-templates/Subscription.onNotified.request.vtl
+          response: mapping-templates/Subscription.onNotified.response.vtl
   dataSources:
-    api:
+    noneDs:
       type: 'NONE'
     usersTableDs:
       type: AMAZON_DYNAMODB
@@ -338,6 +356,10 @@ appSync:
             Action:
               - dynamodb:UpdateItem
             Resource: !GetAtt UsersTable.Arn
+    notificationsTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref NotificationsTable
     getImageUploadUrlDs:
       type: 'AWS_LAMBDA'
       config:
@@ -584,7 +606,29 @@ functions:
     environment:
       ALGOLIA_APP_ID: 1MVZUHJGN4
       ALGOLIA_WRITE_KEY: 391bf889e027e951bf99d1550cbe2205
-
+  notify:
+    handler: functions/notify.handler
+    environment:
+      GRAPHQL_API_URL: !GetAtt GraphQlApi.GraphQLUrl
+      TWEETS_TABLE_NAME: !Ref TweetsTable
+      USERS_TABLE_NAME: !Ref UsersTable
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt TweetsTable.StreamArn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - appsync:GraphQL
+        Resource: !Sub ${GraphQlApi.Arn}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: !GetAtt TweetsTable.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: !Sub ${UsersTable.Arn}/index/byScreenName
 resources:
   Resources:
     UsersTable:
@@ -761,6 +805,34 @@ resources:
             Value: relationships-table
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
+    NotificationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: userId
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: byUserId
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: notifications-table
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
