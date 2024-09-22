@@ -215,6 +215,12 @@ appSync:
           request: mapping-templates/Mutation.notifyReplied.request.vtl
           response: mapping-templates/Mutation.notifyReplied.response.vtl
 
+    sendDirectMessage:
+      type: Mutation
+      field: sendDirectMessage
+      functions:
+        - dataSource: sendDirectMessageDs
+
     # Nested
     profile:
       type: Tweet
@@ -324,6 +330,14 @@ appSync:
       type: AMAZON_DYNAMODB
       config:
         tableName: !Ref RelationshipsTable
+    conversationsTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref ConversationsTable
+    directMessagesTableDs:
+      type: AMAZON_DYNAMODB
+      config:
+        tableName: !Ref DirectMessagesTable
     likeMutationDs:
       type: AMAZON_DYNAMODB
       config:
@@ -416,6 +430,11 @@ appSync:
       type: 'AWS_LAMBDA'
       config:
         functionName: search
+
+    sendDirectMessageDs:
+      type: 'AWS_LAMBDA'
+      config:
+        functionName: sendDirectMessage
 
   substitutions:
     TweetsTable: !Ref TweetsTable
@@ -674,6 +693,21 @@ functions:
           - dynamodb:GetItem
         Resource: !GetAtt TweetsTable.Arn
 
+  sendDirectMessage:
+    handler: functions/send-direct-message.handler
+    environment:
+      CONVERSATIONS_TABLE_NAME: !Ref ConversationsTable
+      DIRECT_MESSAGES_TABLE_NAME: !Ref DirectMessagesTable
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:PutItem
+        Resource: !GetAtt DirectMessagesTable.Arn
+      - Effect: Allow
+        Action: 
+          - dynamodb:UpdateItem
+        Resource: !GetAtt ConversationsTable.Arn
+
 resources:
   Resources:
     UsersTable:
@@ -880,6 +914,59 @@ resources:
             Value: ${self:custom.stage}
           - Key: Name
             Value: notifications-table
+
+    ConversationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: otherUserId
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: otherUserId
+            AttributeType: S
+          - AttributeName: lastModified
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: byUserId
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: lastModified
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: conversations-table
+
+    DirectMessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: conversationId
+            KeyType: HASH
+          - AttributeName: messageId
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: conversationId
+            AttributeType: S
+          - AttributeName: messageId
+            AttributeType: S
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        Tags:
+          - Key: Environment
+            Value: ${self:custom.stage}
+          - Key: Name
+            Value: direct-messages-table
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:

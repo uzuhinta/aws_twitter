@@ -34,6 +34,14 @@ type Query {
     limit: Int!
     nextToken: String
   ): HashTagResultsPage!
+
+  listConversations(limit: Int!, nextToken: String): ConversationsPage!
+
+  getDirectMessages(
+    otherUserId: ID!
+    limit: Int!
+    nextToken: String
+  ): MessagesPage!
 }
 
 type Mutation {
@@ -80,6 +88,8 @@ type Mutation {
     replyTweetId: ID!
     repliedBy: ID!
   ): Notification! @aws_iam
+
+  sendDirectMessage(otherUserId: ID!, message: String!): Conversation!
 }
 
 type Subscription {
@@ -282,11 +292,7 @@ type Replied implements iNotification @aws_iam @aws_cognito_user_pools {
   createdAt: AWSDateTime!
 }
 
-union Notification =
-    Retweeted
-  | Liked
-  | Mentioned
-  | Replied
+union Notification = Retweeted | Liked | Mentioned | Replied
 
 interface iNotification {
   id: ID!
@@ -300,4 +306,28 @@ enum NotificationType {
   Liked
   Mentioned
   Replied
+}
+
+type Conversation {
+  id: ID!
+  otherUser: OtherProfile!
+  lastMessage: String!
+  lastModified: AWSDateTime!
+}
+
+type ConversationsPage {
+  conversations: [Conversation!]
+  nextToken: String
+}
+
+type Message {
+  messageId: ID!
+  from: IProfile!
+  message: String!
+  timestamp: AWSDateTime!
+}
+
+type MessagesPage {
+  messages: [Message!]
+  nextToken: String
 }
