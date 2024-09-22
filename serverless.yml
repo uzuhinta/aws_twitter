@@ -307,6 +307,15 @@ appSync:
         - dataSource: noneDs
           request: mapping-templates/Subscription.onNotified.request.vtl
           response: mapping-templates/Subscription.onNotified.response.vtl
+
+    otherUser:
+      type: Conversation
+      field: otherUser
+      functions:
+        - dataSource: usersTableDs
+          request: mapping-templates/Conversation.otherUser.request.vtl
+          response: mapping-templates/Conversation.otherUser.response.vtl
+
   dataSources:
     noneDs:
       type: 'NONE'
