@@ -96,9 +96,9 @@ appSync:
           request: mapping-templates/Query.getDirectMessages.request.vtl
           response: mapping-templates/Query.getDirectMessages.response.vtl
 
-    getMyTimeLine:
+    getMyTimeline:
       type: Query
-      field: getMyTimeLine
+      field: getMyTimeline
       functions:
         - dataSource: timelinesTableDs
           request: mapping-templates/Query.getMyTimeLine.request.vtl
@@ -232,9 +232,9 @@ appSync:
           request: mapping-templates/Mutation.notifyReplied.request.vtl
           response: mapping-templates/Mutation.notifyReplied.response.vtl
 
-    notifyDmed:
+    notifyDMed:
       type: Mutation
-      field: notifyDmed
+      field: notifyDMed
       functions:
         - dataSource: notificationsTableDs
           request: mapping-templates/Mutation.notifyDmed.request.vtl
@@ -289,13 +289,13 @@ appSync:
         - dataSource: tweetsTableDs
           request: mapping-templates/Reply.inReplyToTweet.request.vtl
           response: mapping-templates/Reply.inReplyToTweet.response.vtl
-    intReplyToUsers:
+    inReplyToUsers:
       type: Reply
-      field: intReplyToUsers
+      field: inReplyToUsers
       functions:
         - dataSource: usersTableDs
-          request: mapping-templates/Reply.intReplyToUsers.request.vtl
-          response: mapping-templates/Reply.intReplyToUsers.response.vtl
+          request: mapping-templates/Reply.inReplyToUsers.request.vtl
+          response: mapping-templates/Reply.inReplyToUsers.response.vtl
     tweets:
       type: TimelinePage
       field: tweets
@@ -737,6 +737,8 @@ functions:
 
   notifyDmed:
     handler: functions/notify-dmed.handler
+    environment:
+      GRAPHQL_API_URL: !GetAtt GraphQlApi.GraphQLUrl
     events:
       - stream:
           type: dynamodb
@@ -1062,6 +1064,8 @@ resources:
     AssetBucket:
       Type: AWS::S3::Bucket
       Properties:
+        AccelerateConfiguration:
+          AccelerationStatus: Enabled
         CorsConfiguration:
           CorsRules:
             - AllowedMethods:

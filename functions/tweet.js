@@ -28,7 +28,10 @@ export const handler = async (event) => {
     likes: 0,
     retweets: 0,
     hashTags,
+    liked: false,
+    retweeted: false
   };
+
 
   console.log('tweet: \n' + JSON.stringify(tweet, null, 2));
 

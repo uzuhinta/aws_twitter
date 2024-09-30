@@ -2,13 +2,16 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ulid } from 'ulid';
 
-const s3Client = new S3Client();
+const s3Client = new S3Client({
+  useAccelerateEndpoint: true,
+});
+
 const bucketName = process.env.BUCKET_NAME;
 
 export const handler = async (event) => {
   const id = ulid();
 
-  let key = `${event.identity.username}/${id}`; // Use timestamp to ensure unique file names
+  let key = `${id}`; // Use timestamp to ensure unique file names
 
   const extension = event.arguments.extension;
 
@@ -35,9 +38,7 @@ export const handler = async (event) => {
 
   // Generate a pre-signed URL for uploading the object
   const command = new PutObjectCommand(s3Params);
-  const presignedUrl = await getSignedUrl(s3Client, command, {
-    expiresIn: 3600,
-  });
+  const presignedUrl = await getSignedUrl(s3Client, command);
 
   return presignedUrl;
 };

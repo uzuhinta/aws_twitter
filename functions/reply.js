@@ -3,7 +3,7 @@ import {
   GetItemCommand,
   TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb';
-import { marshall } from '@aws-sdk/util-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import _ from 'lodash';
 import { ulid } from 'ulid';
 
@@ -21,7 +21,7 @@ const getTweetById = async (tweetId) => {
     })
   );
 
-  return res.Item;
+  return unmarshall(res.Item);
 };
 
 export const handler = async (event) => {
@@ -51,6 +51,8 @@ export const handler = async (event) => {
     likes: 0,
     retweets: 0,
     hashTags,
+    liked: false,
+    retweeted: false,
   };
 
   console.log('tweet: \n' + JSON.stringify(tweet, null, 2));
@@ -112,11 +114,13 @@ export const handler = async (event) => {
 };
 
 async function getUserIdsToReplyTo(tweet) {
+  console.log('getUserIdsToReplyTo', tweet);
   let userIds = [tweet.creator];
   if (tweet.__typename === 'Reply') {
     userIds = userIds.concat(tweet.inReplyToUserIds);
   } else if (tweet.__typename === 'Retweet') {
     const retweetOf = await getTweetById(tweet.retweetOf);
+    console.log('getUserIdsToReplyTo::retweetOf', retweetOf);
     userIds = userIds.concat(await getUserIdsToReplyTo(retweetOf));
   }
 

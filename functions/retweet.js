@@ -111,5 +111,5 @@ export const handler = async (event) => {
     })
   );
 
-  return true;
+  return tweet;
 };

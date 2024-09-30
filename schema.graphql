@@ -7,7 +7,7 @@ schema {
 type Query {
   getImageUploadUrl(extension: String, contentType: String): AWSURL!
 
-  getMyTimeLine(limit: Int!, nextToken: String): TimelinePage!
+  getMyTimeline(limit: Int!, nextToken: String): TimelinePage!
 
   getMyProfile: MyProfile!
 
@@ -53,7 +53,7 @@ type Mutation {
 
   unlike(tweetId: ID!): Boolean!
 
-  retweet(tweetId: ID!): Boolean!
+  retweet(tweetId: ID!): Retweet!
 
   unretweet(tweetId: ID!): Boolean!
 
@@ -217,7 +217,7 @@ type Reply implements ITweet {
   profile: IProfile!
   createdAt: AWSDateTime!
   inReplyToTweet: ITweet!
-  intReplyToUsers: [IProfile!]
+  inReplyToUsers: [IProfile!]
   text: String!
   replies: Int!
   likes: Int!
